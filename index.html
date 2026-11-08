@@ -70,7 +70,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 <header>
   <div class="top">
     <h1>Marcello’s Private Schedule<small>♔ Personal Office</small></h1>
-    <div id="sync">Connecting…</div>
+    <div><span id="clock" style="font-size:12px;color:#e3c777;margin-right:12px"></span><span id="sync">Connecting…</span></div>
   </div>
   <div class="tabs">
     <button class="tab" data-p="schedule">Schedule</button>
@@ -110,8 +110,9 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
         <label>Date</label><input id="rd" type="date">
         <label>At (time)</label><input id="rtime" type="time">
         <button class="gold" style="width:100%;margin-top:12px" id="addRem">Set reminder</button>
+        <div class="empty" id="rmsg" style="margin-top:8px"></div>
       </div>
-      <div class="panel"><h2>Upcoming</h2><div id="remsUp"></div></div>
+      <div class="panel"><h2>Upcoming</h2><div id="remsUp"></div><button style="margin-top:10px" id="clearRems">Clear all reminders</button></div>
     </div>
   </section>
 
@@ -161,7 +162,7 @@ async function pull(){
     const rows=await r.json();
     if(rows.length&&rows[0].data&&Object.keys(rows[0].data).length){
       S=Object.assign({items:[],busy:{},notes:'',rems:[]},rows[0].data);
-      try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}
+      clean();try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}
       $('notes').value=S.notes||'';render();check();status('Synced','ok');
     }else push();
   }catch(e){status('Offline — saved on this device','err')}
@@ -230,7 +231,7 @@ function renderRems(){
   const n=dueIds.size;$('badge').hidden=!n;$('badge').textContent=n;
   const mk=(x,isDue)=>{
     const e=document.createElement('div');e.className='rem';
-    e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+'</small></span><button class="'+(isDue?'tick':'x')+'" '+(isDue?'style="width:34px;height:34px;font-size:16px" title="Done">✓':'title="Delete">✕')+'</button>';
+    e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+(isDue?'':' · '+left(x))+'</small></span><button class="'+(isDue?'tick':'x')+'" '+(isDue?'style="width:34px;height:34px;font-size:16px" title="Done">✓':'title="Delete">✕')+'</button>';
     e.querySelector('button').onclick=()=>{if(isDue)x.done=true;else S.rems=S.rems.filter(r=>r.id!==x.id);save();renderRems();check()};
     return e;
   };
@@ -254,6 +255,7 @@ $('todayBtn').onclick=()=>{start=monday(new Date());render()};
 $('notes').value=S.notes||'';
 $('notes').oninput=e=>{S.notes=e.target.value;save()};
 $('rd').value=key(new Date());
+$('clearRems').onclick=()=>{if(confirm('Delete all reminders?')){S.rems=[];save();renderRems();check()}};
 
 // Private Secretary reminders
 let ac=null;
@@ -265,11 +267,18 @@ function beep(){
 $('addRem').onclick=()=>{
   const t=$('rt').value.trim(),d=$('rd').value,tm=$('rtime').value;
   if(!t||!d||!tm){alert('Please enter the reminder, date and time.');return}
-  S.rems.push({id:uid(),text:t,date:d,time:tm,done:false});
+  const when=stamp(d,tm);if(!isFinite(when)){alert('That date or time is not valid.');return}
+  S.rems.push({id:uid(),text:t,date:d,time:tm,at:when,done:false});
+  $('rmsg').textContent='Reminder set for '+new Date(when).toLocaleString([],{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' ('+left({at:when})+'). It will not appear before then.';
   $('rt').value='';save();renderRems();check();
   try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}
 };
-function due(){const n=new Date(),now=key(n)+n.toTimeString().slice(0,5);return S.rems.filter(r=>!r.done&&(r.date+r.time)<=now)}
+function stamp(date,time){const [y,m,d]=date.split('-').map(Number),[h,mi]=time.split(':').map(Number);return new Date(y,m-1,d,h,mi,0,0).getTime()}
+function at(r){return r.at}
+function clean(){S.rems=(S.rems||[]).filter(r=>typeof r.at==='number'&&isFinite(r.at))}
+clean();
+function due(){const t=Date.now();return S.rems.filter(r=>!r.done&&at(r)<=t)}
+function left(r){const m=Math.max(0,Math.ceil((at(r)-Date.now())/60000));const d=Math.floor(m/1440),h=Math.floor(m%1440/60),mm=m%60;return 'in '+(d?d+'d ':'')+(h?h+'h ':'')+mm+'m'}
 let last=0,sig='',flash=null;const TITLE=document.title;
 function check(){
   const d=due(),box=$('alert');
@@ -297,6 +306,8 @@ function check(){
     try{if('Notification' in window&&Notification.permission==='granted')new Notification('Private Secretary',{body:d[0].text,tag:'secretary',renotify:true,requireInteraction:true})}catch(e){}}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('alert').classList.contains('on'))e.preventDefault()});
+setInterval(()=>{$('clock').textContent='Now '+new Date().toLocaleString([], {dateStyle:'medium',timeStyle:'medium'})},1000);
+setInterval(renderRems,30000);
 setInterval(check,1000);
 document.addEventListener('click',()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
