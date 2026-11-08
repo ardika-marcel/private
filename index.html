@@ -111,6 +111,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
         <label>At (time)</label><input id="rtime" type="time">
         <button class="gold" style="width:100%;margin-top:12px" id="addRem">Set reminder</button>
       </div>
+      <div class="panel"><h2>Upcoming</h2><div id="remsUp"></div></div>
     </div>
   </section>
 
@@ -225,15 +226,21 @@ function render(){
   renderRems();
 }
 function renderRems(){
-  const n=S.rems.filter(x=>!x.done).length;$('badge').hidden=!n;$('badge').textContent=n;
-  const t=$('remsTop');t.innerHTML='';
-  S.rems.filter(x=>!x.done).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).forEach(x=>{
+  const dueIds=new Set(due().map(r=>r.id));
+  const n=dueIds.size;$('badge').hidden=!n;$('badge').textContent=n;
+  const mk=(x,isDue)=>{
     const e=document.createElement('div');e.className='rem';
-    e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+'</small></span><button class="tick" style="width:34px;height:34px;font-size:16px" title="Done">✓</button>';
-    e.querySelector('button').onclick=()=>{x.done=true;save();renderRems();check()};
-    t.appendChild(e);
-  });
-  if(!t.children.length)t.innerHTML='<div class="empty">No pending reminders</div>';
+    e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+'</small></span><button class="'+(isDue?'tick':'x')+'" '+(isDue?'style="width:34px;height:34px;font-size:16px" title="Done">✓':'title="Delete">✕')+'</button>';
+    e.querySelector('button').onclick=()=>{if(isDue)x.done=true;else S.rems=S.rems.filter(r=>r.id!==x.id);save();renderRems();check()};
+    return e;
+  };
+  const sort=(a,b)=>(a.date+a.time).localeCompare(b.date+b.time);
+  const t=$('remsTop');t.innerHTML='';
+  S.rems.filter(x=>dueIds.has(x.id)).sort(sort).forEach(x=>t.appendChild(mk(x,true)));
+  if(!t.children.length)t.innerHTML='<div class="empty">Nothing due right now</div>';
+  const u=$('remsUp');u.innerHTML='';
+  S.rems.filter(x=>!x.done&&!dueIds.has(x.id)).sort(sort).forEach(x=>u.appendChild(mk(x,false)));
+  if(!u.children.length)u.innerHTML='<div class="empty">No upcoming reminders</div>';
 }
 $('addItem').onclick=()=>{
   const t=$('nt').value.trim();if(!t)return;
@@ -259,7 +266,7 @@ $('addRem').onclick=()=>{
   const t=$('rt').value.trim(),d=$('rd').value,tm=$('rtime').value;
   if(!t||!d||!tm){alert('Please enter the reminder, date and time.');return}
   S.rems.push({id:uid(),text:t,date:d,time:tm,done:false});
-  $('rt').value='';save();renderRems();beep();
+  $('rt').value='';save();renderRems();check();
   try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}
 };
 function due(){const n=new Date(),now=key(n)+n.toTimeString().slice(0,5);return S.rems.filter(r=>!r.done&&(r.date+r.time)<=now)}
@@ -267,14 +274,14 @@ let last=0,sig='',flash=null;const TITLE=document.title;
 function check(){
   const d=due(),box=$('alert');
   if(!d.length){
-    box.classList.remove('on');sig='';
+    box.classList.remove('on');if(sig){sig='';renderRems()}
     if(flash){clearInterval(flash);flash=null;document.title=TITLE}
     return;
   }
   // rebuild only when the set of due reminders changes, so the Done button stays clickable
   const s2=d.map(r=>r.id).join(',');
   if(s2!==sig){
-    sig=s2;
+    sig=s2;renderRems();
     const list=$('alist');list.innerHTML='';
     d.forEach(r=>{
       const e=document.createElement('div');e.className='al';
