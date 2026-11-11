@@ -160,10 +160,14 @@ async function pull(){
     const r=await fetch(SB_URL+'?id=eq.'+ROW_ID+'&select=data',{headers:HDR});
     if(!r.ok)throw new Error(r.status);
     const rows=await r.json();
+    // FIX: if the user changed something (e.g. pressed Done) while we were fetching, don't overwrite it with stale server data
+    if(pushTimer)return;
     if(rows.length&&rows[0].data&&Object.keys(rows[0].data).length){
       S=Object.assign({items:[],busy:{},notes:'',rems:[]},rows[0].data);
       clean();try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}
-      $('notes').value=S.notes||'';render();check();status('Synced','ok');
+      if(document.activeElement!==$('notes'))$('notes').value=S.notes||'';
+      sig=''; // force the alert to rebuild against the fresh data
+      render();check();status('Synced','ok');
     }else push();
   }catch(e){status('Offline — saved on this device','err')}
 }
@@ -226,13 +230,25 @@ function render(){
   drop(tray,null);
   renderRems();
 }
+
+// FIX: always resolve the reminder from the CURRENT data by id (never from a stale object captured earlier)
+function markDone(id){
+  const x=S.rems.find(r=>r.id===id);
+  if(x)x.done=true;
+  save();renderRems();check();
+}
+function removeRem(id){
+  S.rems=S.rems.filter(r=>r.id!==id);
+  save();renderRems();check();
+}
+
 function renderRems(){
   const dueIds=new Set(due().map(r=>r.id));
   const n=dueIds.size;$('badge').hidden=!n;$('badge').textContent=n;
   const mk=(x,isDue)=>{
     const e=document.createElement('div');e.className='rem';
     e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+(isDue?'':' · '+left(x))+'</small></span><button class="'+(isDue?'tick':'x')+'" '+(isDue?'style="width:34px;height:34px;font-size:16px" title="Done">✓':'title="Delete">✕')+'</button>';
-    e.querySelector('button').onclick=()=>{if(isDue)x.done=true;else S.rems=S.rems.filter(r=>r.id!==x.id);save();renderRems();check()};
+    e.querySelector('button').onclick=()=>{isDue?markDone(x.id):removeRem(x.id)};
     return e;
   };
   const sort=(a,b)=>(a.date+a.time).localeCompare(b.date+b.time);
@@ -295,7 +311,7 @@ function check(){
     d.forEach(r=>{
       const e=document.createElement('div');e.className='al';
       e.innerHTML='<span><b>'+esc(r.text)+'</b><br><small>Set for '+r.date+' '+r.time+'. I shall keep reminding you until it is done, Sir.</small></span><button class="tick" title="Done">✓</button>';
-      e.querySelector('.tick').onclick=()=>{r.done=true;save();renderRems();check()};
+      e.querySelector('.tick').onclick=()=>markDone(r.id);
       list.appendChild(e);
     });
   }
