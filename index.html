@@ -64,6 +64,27 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 .al{padding:10px;border:1px solid var(--line);border-radius:8px;margin:8px 0;display:flex;gap:12px;align-items:center;text-align:left}
 .al span{flex:1}
 .tick{font-size:22px;width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;border:0;padding:0}
+.f3{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end}
+.f5{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
+.f3 label,.f5 label{margin-top:0}
+@media(max-width:760px){.f3,.f5{grid-template-columns:1fr 1fr}}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .main{flex:1;min-width:0}
+.row .main small{display:block;color:var(--mute);margin-top:2px}
+.row.done .main b{text-decoration:line-through;color:var(--mute)}
+.chip{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:10px;padding:1px 8px;margin:4px 4px 0 0;color:var(--mute)}
+.chip.now{border-color:var(--red);color:var(--red);font-weight:600}
+.chip.ok{border-color:var(--green);color:var(--green)}
+.over-t{color:var(--red);font-weight:600}
+.chk{width:36px;height:36px;border-radius:8px;border:2px solid var(--gold);padding:0;font-size:19px;flex:none;color:#fff}
+.chk.on{background:var(--green);border-color:var(--green)}
+.strip{display:flex;gap:4px;margin-top:6px}
+.dot{width:24px;height:24px;border-radius:50%;padding:0;font-size:10px;border:1px solid var(--line);color:var(--mute)}
+.dot.on{background:var(--green);border-color:var(--green);color:#fff}
+.dot.t{border-color:var(--gold);border-width:2px}
+.role{display:block;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
+.num{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;color:var(--gold);width:28px;flex:none}
 </style>
 </head>
 <body>
@@ -75,6 +96,9 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
   <div class="tabs">
     <button class="tab" data-p="schedule">Schedule</button>
     <button class="tab" data-p="secretary">Private Secretary<span class="n" id="badge" hidden></span></button>
+    <button class="tab" data-p="chancellor">Chancellor<span class="n" id="badgeC" hidden></span></button>
+    <button class="tab" data-p="protocol">Protocol<span class="n" id="badgeP" hidden></span></button>
+    <button class="tab" data-p="rules">Rules</button>
     <button class="tab" data-p="notes">Notes</button>
   </div>
 </header>
@@ -116,6 +140,42 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
     </div>
   </section>
 
+  <section class="page" id="p-chancellor">
+    <div style="max-width:760px;margin:auto">
+      <div class="panel">
+        <h2>The Chancellor</h2>
+        <div class="empty">Set your goals and the date by which each must be achieved. Your Chancellor will remind you 30, 10 and 3 days before.</div>
+        <div class="f3" style="margin-top:10px">
+          <div><label>Goal</label><input id="gt" placeholder="e.g. Save 10,000 USD"></div>
+          <div><label>Achieve by</label><input id="gd" type="date"></div>
+          <button class="gold" id="addGoal">Add goal</button>
+        </div>
+      </div>
+      <div class="panel"><h2>Goals</h2><div id="goals"></div></div>
+      <div class="panel"><h2>Achieved</h2><div id="goalsDone"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-protocol">
+    <div style="max-width:760px;margin:auto">
+      <div class="panel">
+        <h2>Protocol</h2>
+        <div class="empty">Your Advisor will remind you if one is not done and will not let you miss it.</div>
+      </div>
+      <div class="panel"><h2>Checklist <span id="ptoday" style="float:right;font:500 12px Inter,sans-serif;color:var(--mute)"></span></h2><div id="protos"></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-rules">
+    <div style="max-width:760px;margin:auto">
+      <div class="panel">
+        <h2>Rules</h2>
+        <div class="empty">The rules you live by.</div>
+      </div>
+      <div class="panel"><div id="rules"></div></div>
+    </div>
+  </section>
+
   <section class="page" id="p-notes">
     <div class="panel">
       <h2>Notes</h2>
@@ -123,7 +183,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
     </div>
   </section>
 </main>
-<div id="alert"><div class="box"><h3>A reminder, Sir</h3><div class="who">Private Secretary</div><div id="alist"></div></div></div>
+<div id="alert"><div class="box"><h3>A reminder, Sir</h3><div class="who">Your Household</div><div id="alist"></div></div></div>
 <script>
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -136,7 +196,32 @@ const ROW_ID='marcello';
 const HDR={apikey:SB_KEY,'Content-Type':'application/json'};
 function status(t,c){const s=$('sync');s.textContent=t;s.className=c||''}
 
-let S={items:[],busy:{},notes:'',rems:[]};
+const DEF=()=>({items:[],busy:{},notes:'',rems:[],goals:[],plog:{}});
+// Fixed protocol: set by the household, not editable in the page
+const PROTOCOLS=[
+  {id:'p_water',text:'Drink minimum 2,500 ml of water',type:'daily',target:1,time:'21:00'},
+  {id:'p_run',text:'Run at least two times',type:'weekly',target:2,time:'18:00'},
+  {id:'p_goals',text:'Review your goals in the morning',type:'daily',target:1,time:'10:00'},
+  {id:'p_read',text:'Read for at least 20 minutes',type:'daily',target:1,time:'20:30'},
+  {id:'p_plan',text:'Plan tomorrow before bed',type:'daily',target:1,time:'21:30'},
+  {id:'p_sleep',text:'Sleep at least 7 hours',type:'daily',target:1,time:'21:00'},
+  {id:'p_height',text:'Do your height exercise',type:'daily',target:1,time:'19:30'},
+  {id:'p_subliminal',text:'Listen to subliminal',type:'daily',target:1,time:'19:00'},
+  {id:'p_review',text:'Weekly review of schedule, goals and spending',type:'weekly',target:1,time:'17:00'}
+];
+// Fixed rules: written for you, not editable in the page
+const RULES=[
+  'Keep your word. If you promise, deliver.',
+  'Be on time. Early is on time.',
+  'Never decide in anger. Wait a day, then decide.',
+  'Health comes first: water, movement and sleep before anything else.',
+  'Do the hardest task of the day first.',
+  'Speak less, listen more.',
+  'Spend less than you earn and settle what you owe promptly.',
+  'Review your goals every morning.',
+  'Carry yourself with dignity in all circumstances.'
+];
+let S=DEF();
 try{const r=localStorage.getItem('marcello-schedule');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 
 let pushTimer=null;
@@ -160,10 +245,10 @@ async function pull(){
     const r=await fetch(SB_URL+'?id=eq.'+ROW_ID+'&select=data',{headers:HDR});
     if(!r.ok)throw new Error(r.status);
     const rows=await r.json();
-    // FIX: if the user changed something (e.g. pressed Done) while we were fetching, don't overwrite it with stale server data
+    // if the user changed something (e.g. pressed Done) while we were fetching, don't overwrite it with stale server data
     if(pushTimer)return;
     if(rows.length&&rows[0].data&&Object.keys(rows[0].data).length){
-      S=Object.assign({items:[],busy:{},notes:'',rems:[]},rows[0].data);
+      S=Object.assign(DEF(),rows[0].data);
       clean();try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}
       if(document.activeElement!==$('notes'))$('notes').value=S.notes||'';
       sig=''; // force the alert to rebuild against the fresh data
@@ -180,7 +265,7 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 let dragId=null;
 
 // pages
-const PAGES=['schedule','secretary','notes'];
+const PAGES=['schedule','secretary','chancellor','protocol','rules','notes'];
 function show(){
   let p=location.hash.slice(1);if(!PAGES.includes(p))p='schedule';
   PAGES.forEach(n=>{$('p-'+n).classList.toggle('on',n===p)});
@@ -228,10 +313,10 @@ function render(){
   S.items.filter(i=>!i.date).forEach(it=>tray.appendChild(itemEl(it)));
   if(!tray.children.length)tray.innerHTML='<div class="empty">Nothing waiting</div>';
   drop(tray,null);
-  renderRems();
+  renderRems();renderGoals();renderProtos();renderRules();
 }
 
-// FIX: always resolve the reminder from the CURRENT data by id (never from a stale object captured earlier)
+// always resolve the reminder from the CURRENT data by id (never from a stale object captured earlier)
 function markDone(id){
   const x=S.rems.find(r=>r.id===id);
   if(x)x.done=true;
@@ -244,7 +329,7 @@ function removeRem(id){
 
 function renderRems(){
   const dueIds=new Set(due().map(r=>r.id));
-  const n=dueIds.size;$('badge').hidden=!n;$('badge').textContent=n;
+  badges();
   const mk=(x,isDue)=>{
     const e=document.createElement('div');e.className='rem';
     e.innerHTML='<span>'+esc(x.text)+'<small>'+x.date+' · '+x.time+(isDue?'':' · '+left(x))+'</small></span><button class="'+(isDue?'tick':'x')+'" '+(isDue?'style="width:34px;height:34px;font-size:16px" title="Done">✓':'title="Delete">✕')+'</button>';
@@ -291,39 +376,178 @@ $('addRem').onclick=()=>{
 };
 function stamp(date,time){const [y,m,d]=date.split('-').map(Number),[h,mi]=time.split(':').map(Number);return new Date(y,m-1,d,h,mi,0,0).getTime()}
 function at(r){return r.at}
-function clean(){S.rems=(S.rems||[]).filter(r=>typeof r.at==='number'&&isFinite(r.at))}
+function clean(){
+  S.rems=(S.rems||[]).filter(r=>typeof r.at==='number'&&isFinite(r.at));
+  S.goals=S.goals||[];S.plog=S.plog||{};
+  const c=new Date();c.setDate(c.getDate()-120);const ck=key(c);
+  Object.keys(S.plog).forEach(k=>{if(k<ck)delete S.plog[k]});
+}
 clean();
 function due(){const t=Date.now();return S.rems.filter(r=>!r.done&&at(r)<=t)}
 function left(r){const m=Math.max(0,Math.ceil((at(r)-Date.now())/60000));const d=Math.floor(m/1440),h=Math.floor(m%1440/60),mm=m%60;return 'in '+(d?d+'d ':'')+(h?h+'h ':'')+mm+'m'}
 let last=0,sig='',flash=null;const TITLE=document.title;
+
+// ---- Chancellor (goals) ----
+function daysUntil(s){const [y,m,d]=s.split('-').map(Number);const t=new Date(y,m-1,d);const n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/864e5)}
+function fmtDate(s){const [y,m,d]=s.split('-').map(Number);return d+' '+MON[m-1]+' '+y}
+const STAGES=[30,10,3];
+function goalStage(g){
+  if(g.done)return null;
+  const d=daysUntil(g.date);if(d<0)return null;
+  const ap=STAGES.filter(t=>d<=t);if(!ap.length)return null;
+  const latest=Math.min(...ap);
+  return (g.ack&&g.ack[latest])?null:latest;
+}
+function ackGoal(id){
+  const g=S.goals.find(x=>x.id===id);if(!g)return;
+  const d=daysUntil(g.date);g.ack=g.ack||{};
+  STAGES.forEach(t=>{if(d<=t)g.ack[t]=true});
+  save();render();check();
+}
+
+// ---- Advisor (protocol) ----
+function weekKeys(){const m=monday(new Date());return [0,1,2,3,4,5,6].map(i=>{const d=new Date(m);d.setDate(d.getDate()+i);return key(d)})}
+function daysLeft(){return 7-((new Date().getDay()+6)%7)}
+function isDone(p,k){return (S.plog[k]||[]).includes(p.id)}
+function weekDone(p){return weekKeys().filter(k=>isDone(p,k)).length}
+function toggleDay(id,k,force){
+  const log=S.plog[k]||[];const i=log.indexOf(id);
+  if(i>=0&&force!==true)log.splice(i,1);else if(i<0)log.push(id);
+  S.plog[k]=log;save();render();check();
+}
+function protoDue(p){
+  const k=key(new Date());
+  if(isDone(p,k))return null;
+  const [h,m]=(p.time||'18:00').split(':').map(Number);
+  const n=new Date();if(n.getHours()*60+n.getMinutes()<h*60+m)return null;
+  if(p.type==='weekly'){
+    const rem=p.target-weekDone(p),dl=daysLeft();
+    if(rem>0&&dl<=rem+1)return rem+' more needed this week and only '+dl+' day'+(dl===1?'':'s')+' left, Sir. Do not miss it.';
+    return null;
+  }
+  return 'Not yet done today, Sir. Do not let it slip.';
+}
+
+// everything that is currently asking for attention
+function dueAll(){
+  const out=[];
+  due().forEach(r=>out.push({id:'r'+r.id,cat:'sec',role:'Private Secretary',title:r.text,
+    sub:'Set for '+r.date+' '+r.time+'. I shall keep reminding you until it is done, Sir.',done:()=>markDone(r.id)}));
+  S.goals.forEach(g=>{
+    const st=goalStage(g);if(st===null)return;
+    const d=daysUntil(g.date);
+    out.push({id:'g'+g.id+'-'+st,cat:'chan',role:'Chancellor',title:g.text,
+      sub:(d===0?'Today is the day, Sir.':d+' day'+(d===1?'':'s')+' remain until '+fmtDate(g.date)+'.')+' Press the tick to acknowledge.',done:()=>ackGoal(g.id)});
+  });
+  PROTOCOLS.forEach(p=>{
+    const m=protoDue(p);if(!m)return;
+    out.push({id:'p'+p.id,cat:'adv',role:'Advisor',title:p.text,sub:m,done:()=>toggleDay(p.id,key(new Date()),true)});
+  });
+  return out;
+}
+function badges(){
+  const it=dueAll();
+  [['sec','badge'],['chan','badgeC'],['adv','badgeP']].forEach(([c,id])=>{
+    const n=it.filter(x=>x.cat===c).length;$(id).hidden=!n;$(id).textContent=n;
+  });
+}
+
 function check(){
-  const d=due(),box=$('alert');
+  const d=dueAll(),box=$('alert');
   if(!d.length){
     box.classList.remove('on');if(sig){sig='';renderRems()}
     if(flash){clearInterval(flash);flash=null;document.title=TITLE}
     return;
   }
-  // rebuild only when the set of due reminders changes, so the Done button stays clickable
+  // rebuild only when the set of due items changes, so the tick stays clickable
   const s2=d.map(r=>r.id).join(',');
   if(s2!==sig){
     sig=s2;renderRems();
     const list=$('alist');list.innerHTML='';
     d.forEach(r=>{
       const e=document.createElement('div');e.className='al';
-      e.innerHTML='<span><b>'+esc(r.text)+'</b><br><small>Set for '+r.date+' '+r.time+'. I shall keep reminding you until it is done, Sir.</small></span><button class="tick" title="Done">✓</button>';
-      e.querySelector('.tick').onclick=()=>markDone(r.id);
+      e.innerHTML='<span><small class="role">'+r.role+'</small><b>'+esc(r.title)+'</b><br><small>'+esc(r.sub)+'</small></span><button class="tick" title="Done">✓</button>';
+      e.querySelector('.tick').onclick=r.done;
       list.appendChild(e);
     });
   }
   box.classList.add('on');
-  if(!flash){let on=false;flash=setInterval(()=>{on=!on;document.title=on?'🔔 REMINDER: '+d[0].text:TITLE},900)}
+  if(!flash){let on=false;flash=setInterval(()=>{const c=dueAll();on=!on;document.title=on&&c.length?'🔔 '+c[0].role+': '+c[0].title:TITLE},900)}
   if(Date.now()-last>4000){last=Date.now();beep();
     try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}
-    try{if('Notification' in window&&Notification.permission==='granted')new Notification('Private Secretary',{body:d[0].text,tag:'secretary',renotify:true,requireInteraction:true})}catch(e){}}
+    try{if('Notification' in window&&Notification.permission==='granted')new Notification(d[0].role,{body:d[0].title,tag:'household',renotify:true,requireInteraction:true})}catch(e){}}
 }
+
+// ---- Chancellor UI ----
+function renderGoals(){
+  const L=$('goals'),D=$('goalsDone');L.innerHTML='';D.innerHTML='';
+  const open=S.goals.filter(g=>!g.done).sort((a,b)=>a.date.localeCompare(b.date));
+  open.forEach(g=>{
+    const d=daysUntil(g.date);
+    const st=d<0?'<span class="over-t">Overdue by '+(-d)+' day'+(-d===1?'':'s')+'</span>':d===0?'<b>Due today</b>':d+' day'+(d===1?'':'s')+' left';
+    const chips=STAGES.map(t=>{const ack=g.ack&&g.ack[t];const cls=ack?'ok':(d>=0&&d<=t?'now':'');return '<span class="chip '+cls+'">'+t+' days before'+(ack?' ✓':'')+'</span>'}).join('');
+    const e=document.createElement('div');e.className='row';
+    e.innerHTML='<div class="main"><b>'+esc(g.text)+'</b><small>By '+fmtDate(g.date)+' · '+st+'</small><div>'+chips+'</div></div><button class="gold">Achieved</button><button class="x" title="Delete">✕</button>';
+    e.querySelector('.gold').onclick=()=>{const x=S.goals.find(i=>i.id===g.id);if(x){x.done=true;save();render();check()}};
+    e.querySelector('.x').onclick=()=>{if(confirm('Delete this goal?')){S.goals=S.goals.filter(i=>i.id!==g.id);save();render();check()}};
+    L.appendChild(e);
+  });
+  if(!open.length)L.innerHTML='<div class="empty">No goals set yet</div>';
+  const dn=S.goals.filter(g=>g.done);
+  dn.forEach(g=>{
+    const e=document.createElement('div');e.className='row done';
+    e.innerHTML='<div class="main"><b>'+esc(g.text)+'</b><small>Target was '+fmtDate(g.date)+'</small></div><button>Reopen</button><button class="x" title="Delete">✕</button>';
+    e.querySelector('button').onclick=()=>{const x=S.goals.find(i=>i.id===g.id);if(x){x.done=false;save();render();check()}};
+    e.querySelector('.x').onclick=()=>{S.goals=S.goals.filter(i=>i.id!==g.id);save();render()};
+    D.appendChild(e);
+  });
+  if(!dn.length)D.innerHTML='<div class="empty">None yet</div>';
+}
+$('addGoal').onclick=()=>{
+  const t=$('gt').value.trim(),d=$('gd').value;
+  if(!t||!d){alert('Please enter the goal and the date.');return}
+  S.goals.push({id:uid(),text:t,date:d,done:false,ack:{}});
+  $('gt').value='';$('gd').value='';save();render();check();
+};
+$('gt').onkeydown=e=>{if(e.key==='Enter')$('addGoal').click()};
+
+// ---- Protocol UI ----
+const WD=['M','T','W','T','F','S','S'];
+function renderProtos(){
+  const L=$('protos');L.innerHTML='';
+  const tk=key(new Date()),wk=weekKeys();
+  $('ptoday').textContent=new Date().toLocaleDateString([],{weekday:'long',day:'numeric',month:'long'});
+  PROTOCOLS.forEach(p=>{
+    const done=isDone(p,tk);
+    const meta=p.type==='weekly'?p.target+'× per week · '+weekDone(p)+'/'+p.target+' this week':'Every day';
+    const e=document.createElement('div');e.className='row'+(done?' done':'');
+    e.innerHTML='<button class="chk'+(done?' on':'')+'" title="Mark today">'+(done?'✓':'')+'</button><div class="main"><b>'+esc(p.text)+'</b><small>'+meta+' · Advisor reminds from '+(p.time||'18:00')+'</small><div class="strip"></div></div>';
+    e.querySelector('.chk').onclick=()=>toggleDay(p.id,tk);
+    const strip=e.querySelector('.strip');
+    wk.forEach((k,i)=>{
+      const b=document.createElement('button');
+      b.className='dot'+(isDone(p,k)?' on':'')+(k===tk?' t':'');b.textContent=WD[i];
+      b.title=k>tk?'Future day':'Toggle '+k;
+      b.onclick=()=>{if(k<=tk)toggleDay(p.id,k)};
+      strip.appendChild(b);
+    });
+    L.appendChild(e);
+  });
+}
+
+// ---- Rules UI ----
+function renderRules(){
+  const L=$('rules');L.innerHTML='';
+  RULES.forEach((t,i)=>{
+    const e=document.createElement('div');e.className='row';
+    e.innerHTML='<div class="num">'+(i+1)+'</div><div class="main"><b>'+esc(t)+'</b></div>';
+    L.appendChild(e);
+  });
+}
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('alert').classList.contains('on'))e.preventDefault()});
 setInterval(()=>{$('clock').textContent='Now '+new Date().toLocaleString([], {dateStyle:'medium',timeStyle:'medium'})},1000);
-setInterval(renderRems,30000);
+setInterval(()=>{renderRems();renderGoals();renderProtos()},30000);
 setInterval(check,1000);
 document.addEventListener('click',()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
