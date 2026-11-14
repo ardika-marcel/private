@@ -88,13 +88,33 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 .snz{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .snz button{font-size:12px;padding:4px 10px}
 .snz small{color:var(--mute)}
+.vguide{display:none}
+body.visitor .vguide{display:block}
+.vguide h2{margin-bottom:6px}
+.vguide .lead{font-size:15px;line-height:1.6;margin:0 0 12px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.vstep{border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.vstep b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:var(--gold);margin-bottom:2px}
+.vstep span{font-size:13px;line-height:1.5}
+.vnote{margin-top:12px;font-size:12px;color:var(--mute);font-style:italic}
+#lock{position:fixed;inset:0;background:var(--navy);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+#lock.on{display:flex}
+.lk{animation:none;background:var(--card)}
+.lk input[type=password]{margin-bottom:10px;text-align:center}
+.lk button{width:100%;margin-top:8px}
+.keep{display:flex;gap:8px;align-items:center;justify-content:center;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);margin:4px 0 8px}
+.keep input{width:auto}
+#lerr{color:var(--red);font-size:12px;min-height:16px}
+#logout{font-size:12px;padding:4px 10px;color:#e3c777;margin-left:10px}
+body.visitor .item div,body.visitor .rem span,body.visitor #goals .main b,body.visitor #goalsDone .main b,body.visitor #protos .main b,body.visitor #rules .main b,body.visitor #notes{filter:blur(6px);user-select:none;pointer-events:none}
+body.visitor .form,body.visitor .f3,body.visitor #p-secretary .panel:nth-child(2),body.visitor #p-notes .panel:not(.vguide){pointer-events:none;opacity:.55}
 </style>
 </head>
 <body>
 <header>
   <div class="top">
     <h1>Marcello’s Private Schedule<small>♔ Personal Office</small></h1>
-    <div><span id="clock" style="font-size:12px;color:#e3c777;margin-right:12px"></span><span id="sync">Connecting…</span></div>
+    <div><span id="clock" style="font-size:12px;color:#e3c777;margin-right:12px"></span><span id="sync">Connecting…</span><button id="logout">Log out</button></div>
   </div>
   <div class="tabs">
     <button class="tab" data-p="schedule">Schedule</button>
@@ -107,6 +127,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 </header>
 <main>
   <section class="page" id="p-schedule">
+    <div class="panel vguide"><h2>How Marcello Plans His Week</h2><p class="lead">Marcello is a very busy man. His days are full and his time is guarded closely, so nothing is left to memory.</p><div class="vgrid"><div class="vstep"><b>Day and time for everything</b><span>Every commitment goes on the weekly board with a time. Undecided items wait in the Unscheduled tray until they get a day.</span></div><div class="vstep"><b>Every day is rated</b><span>Each day is marked Not busy, Normal or Busy, shown by the coloured bar at its top, so he knows which days are full before agreeing to anything new.</span></div><div class="vstep"><b>Reminders at the top</b><span>Anything due right now appears in the Reminders list, so nothing slips past him.</span></div></div><div class="vnote">Visitors see the structure only. The schedule shown is an illustration with every detail blurred, as Marcello’s real schedule is confidential.</div></div>
     <div class="panel">
       <h2>Reminders <a href="#secretary" style="float:right;font:500 12px Inter,sans-serif;color:var(--gold)">+ Set a reminder</a></h2>
       <div id="remsTop"></div>
@@ -130,6 +151,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 
   <section class="page" id="p-secretary">
     <div style="max-width:560px;margin:auto">
+    <div class="panel vguide"><h2>How Marcello Uses His Private Secretary</h2><p class="lead">With so many demands on his time, a very busy man like Marcello cannot rely on remembering.</p><div class="vgrid"><div class="vstep"><b>Exact date and time</b><span>Each reminder is set for a specific moment and stays hidden until then.</span></div><div class="vstep"><b>It does not stop</b><span>The alert keeps sounding until he presses the tick to confirm it is done.</span></div><div class="vstep"><b>Postpone, but only twice</b><span>If he cannot act at once, he may ask to be reminded again in 5 or 10 minutes, but never more than twice.</span></div></div><div class="vnote">Visitors see the structure only. The reminders shown are an illustration with every detail blurred, as Marcello’s real reminders are confidential.</div></div>
       <div class="panel">
         <h2>Private Secretary</h2>
         <div class="empty">Your Private Secretary will remind you at the chosen time, and will not stop until you press the tick.</div>
@@ -145,6 +167,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 
   <section class="page" id="p-chancellor">
     <div style="max-width:760px;margin:auto">
+    <div class="panel vguide"><h2>How Marcello Guards His Goals</h2><p class="lead">A very busy man can easily lose sight of the long term, so Marcello gives every goal a deadline.</p><div class="vgrid"><div class="vstep"><b>One goal, one date</b><span>Each goal is written down with the day by which it must be achieved.</span></div><div class="vstep"><b>Three warnings</b><span>His Chancellor reminds him 30, 10 and 3 days before each deadline.</span></div><div class="vstep"><b>Achieved goals are kept</b><span>Completed goals move to a record of what he has accomplished.</span></div></div><div class="vnote">Visitors see the structure only. The goals shown are an illustration with every detail blurred, as Marcello’s real goals are confidential.</div></div>
       <div class="panel">
         <h2>The Chancellor</h2>
         <div class="empty">Set your goals and the date by which each must be achieved. Your Chancellor will remind you 30, 10 and 3 days before.</div>
@@ -161,6 +184,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 
   <section class="page" id="p-protocol">
     <div style="max-width:760px;margin:auto">
+    <div class="panel vguide"><h2>How Marcello Keeps His Habits</h2><p class="lead">Marcello is a very busy man, yet his health and discipline come first. His Advisor keeps him to a fixed protocol.</p><div class="vgrid"><div class="vstep"><b>Daily and weekly routines</b><span>Some habits are done every day, others a set number of times each week.</span></div><div class="vstep"><b>Ticked off each day</b><span>He marks each one as it is done, and the week strip shows his consistency at a glance.</span></div><div class="vstep"><b>The Advisor steps in</b><span>If a habit is slipping, he is reminded in good time and is not allowed to miss it.</span></div></div><div class="vnote">Visitors see the structure only. The protocol shown is blurred, as Marcello’s real protocol is confidential.</div></div>
       <div class="panel">
         <h2>Protocol</h2>
         <div class="empty">Your Advisor will remind you if one is not done and will not let you miss it.</div>
@@ -171,6 +195,7 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 
   <section class="page" id="p-rules">
     <div style="max-width:760px;margin:auto">
+    <div class="panel vguide"><h2>How Marcello Decides</h2><p class="lead">When every hour counts, a very busy man cannot weigh every choice from scratch. Marcello lives by a short set of rules.</p><div class="vgrid"><div class="vstep"><b>Fixed in advance</b><span>The rules are written once and are not changed on the spur of the moment.</span></div><div class="vstep"><b>Read often</b><span>He returns to them regularly, so they guide his choices when he is under pressure.</span></div></div><div class="vnote">Visitors see the structure only. The rules shown are blurred, as Marcello’s real rules are confidential.</div></div>
       <div class="panel">
         <h2>Rules</h2>
         <div class="empty">The rules you live by.</div>
@@ -180,12 +205,20 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
   </section>
 
   <section class="page" id="p-notes">
+    <div class="panel vguide"><h2>How Marcello Keeps His Notes</h2><p class="lead">Marcello is a very busy man, so he writes things down the moment they come to mind.</p><div class="vgrid"><div class="vstep"><b>One place for everything</b><span>Loose thoughts and things to remember go into a single page of notes.</span></div><div class="vstep"><b>Saved automatically</b><span>Every change is saved and synced as he types.</span></div></div><div class="vnote">Visitors see the structure only. The notes shown are blurred, as Marcello’s real notes are confidential.</div></div>
     <div class="panel">
       <h2>Notes</h2>
       <textarea id="notes" placeholder="Things to remember…"></textarea>
     </div>
   </section>
 </main>
+<div id="lock"><div class="box lk"><h3>Private Office</h3><div class="who">♔ Marcello</div>
+  <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+  <label class="keep"><input type="checkbox" id="keep"> Keep me signed in on this device</label>
+  <div id="lerr"></div>
+  <button class="gold" id="enterBtn">Enter</button>
+  <button id="visBtn">Continue as visitor</button>
+</div></div>
 <div id="alert"><div class="box"><h3>A reminder, Sir</h3><div class="who">Your Household</div><div id="alist"></div></div></div>
 <script>
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -227,25 +260,28 @@ const RULES=[
   'Carry yourself with dignity in all circumstances.'
 ];
 let S=DEF();
-try{const r=localStorage.getItem('marcello-schedule');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+let MODE=null; // 'owner' | 'visitor' | null (locked)
+const AUTH_KEY='marcello-auth';
+const PW_HASH='8d95796f3ce1150b2945b04132145a4cf92bd1d73140055a8b9348f87909426f';
 
 let pushTimer=null;
+async function doPush(){
+  try{
+    const r=await fetch(SB_URL+'?on_conflict=id',{method:'POST',
+      headers:{...HDR,Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({id:ROW_ID,data:S,updated_at:new Date().toISOString()})});
+    if(!r.ok)throw new Error(r.status);
+    status('Synced','ok');
+  }catch(e){status('Offline — saved on this device','err')}
+}
 function push(){
   clearTimeout(pushTimer);status('Saving…');
-  pushTimer=setTimeout(async()=>{
-    try{
-      const r=await fetch(SB_URL+'?on_conflict=id',{method:'POST',
-        headers:{...HDR,Prefer:'resolution=merge-duplicates,return=minimal'},
-        body:JSON.stringify({id:ROW_ID,data:S,updated_at:new Date().toISOString()})});
-      if(!r.ok)throw new Error(r.status);
-      pushTimer=null;status('Synced','ok');
-    }catch(e){pushTimer=null;status('Offline — saved on this device','err')}
-  },600);
+  pushTimer=setTimeout(async()=>{await doPush();pushTimer=null},600);
 }
-const save=()=>{try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}push()};
+const save=()=>{if(MODE!=='owner')return;try{localStorage.setItem('marcello-schedule',JSON.stringify(S))}catch(e){}push()};
 
 async function pull(){
-  if(pushTimer)return;
+  if(MODE!=='owner'||pushTimer)return;
   try{
     const r=await fetch(SB_URL+'?id=eq.'+ROW_ID+'&select=data',{headers:HDR});
     if(!r.ok)throw new Error(r.status);
@@ -436,6 +472,7 @@ function protoDue(p){
 
 // everything that is currently asking for attention
 function dueAll(){
+  if(MODE!=='owner')return [];
   const out=[];
   due().forEach(r=>out.push({id:'r'+r.id,cat:'sec',role:'Private Secretary',title:r.text,
     sub:'Set for '+r.date+' '+r.time+'. I shall keep reminding you until it is done, Sir.',done:()=>markDone(r.id)}));
@@ -569,7 +606,75 @@ setInterval(()=>{renderRems();renderGoals();renderProtos()},30000);
 setInterval(check,1000);
 document.addEventListener('click',()=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
-show();render();check();pull();
+
+// ---- Access: password / visitor ----
+function getMode(){
+  try{
+    if(localStorage.getItem(AUTH_KEY)==='owner'||sessionStorage.getItem(AUTH_KEY)==='owner')return 'owner';
+    if(sessionStorage.getItem(AUTH_KEY)==='visitor')return 'visitor';
+  }catch(e){}
+  return null;
+}
+// visitors only ever see made-up placeholder data, never the real schedule
+function demo(){
+  const m=monday(new Date()),k=i=>{const d=new Date(m);d.setDate(d.getDate()+i);return key(d)};
+  const d=DEF(),t=Date.now();
+  const names=['Confidential meeting','Private appointment','Confidential call','Private matter'];
+  [[0,'09:00'],[0,'14:00'],[1,'10:30'],[2,'08:00'],[2,'16:00'],[3,'11:00'],[4,'13:00'],[5,'10:00'],[6,'18:00']]
+    .forEach(([i,tm],n)=>d.items.push({id:uid(),title:names[n%4],time:tm,date:k(i)}));
+  ['busy','normal','busy','normal','normal','free','normal'].forEach((l,i)=>d.busy[k(i)]=l);
+  d.rems=[{id:uid(),text:'Confidential reminder',date:key(new Date(t+864e5)),time:'09:00',at:t+864e5,done:false}];
+  d.goals=[30,75].map(n=>({id:uid(),text:'Confidential goal',date:key(new Date(t+n*864e5)),done:false,ack:{}}));
+  const ti=(new Date().getDay()+6)%7;
+  for(let i=0;i<=ti;i++)d.plog[k(i)]=i%2?['p_water','p_schedule']:['p_water','p_goals','p_run'];
+  d.notes='Confidential notes are hidden from visitors.';
+  return d;
+}
+function enter(mode){
+  MODE=mode;
+  document.body.classList.toggle('visitor',mode==='visitor');
+  $('lock').classList.remove('on');
+  $('logout').textContent=mode==='owner'?'Log out':'Owner login';
+  if(mode==='owner'){
+    S=DEF();
+    try{const r=localStorage.getItem('marcello-schedule');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+    clean();
+  }else{
+    S=demo();status('Visitor view — details hidden');
+  }
+  $('notes').value=S.notes||'';
+  sig='';render();check();
+  if(mode==='owner')pull();
+}
+function showLock(){$('lock').classList.add('on');setTimeout(()=>$('pw').focus(),50)}
+async function sha(t){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+$('enterBtn').onclick=async()=>{
+  let ok=false;
+  try{ok=(await sha('marcello:'+$('pw').value))===PW_HASH}
+  catch(e){$('lerr').textContent='This browser cannot check the password (an https link is needed).';return}
+  if(!ok){$('lerr').textContent='Incorrect password, Sir.';$('pw').value='';return}
+  $('pw').value='';$('lerr').textContent='';
+  try{
+    if($('keep').checked){localStorage.setItem(AUTH_KEY,'owner')}
+    else{localStorage.removeItem(AUTH_KEY);sessionStorage.setItem(AUTH_KEY,'owner')}
+  }catch(e){}
+  enter('owner');
+};
+$('pw').onkeydown=e=>{if(e.key==='Enter')$('enterBtn').click()};
+$('visBtn').onclick=()=>{try{sessionStorage.setItem(AUTH_KEY,'visitor')}catch(e){}enter('visitor')};
+$('logout').onclick=async()=>{
+  // make sure any unsaved change reaches the server before leaving
+  if(MODE==='owner'&&pushTimer){clearTimeout(pushTimer);await doPush();pushTimer=null}
+  try{localStorage.removeItem(AUTH_KEY);sessionStorage.removeItem(AUTH_KEY)}catch(e){}
+  location.reload();
+};
+
+show();
+const m0=getMode();
+if(m0)enter(m0);else{render();showLock()}
 </script>
 </body>
 </html>
