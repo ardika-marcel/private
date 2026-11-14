@@ -85,6 +85,9 @@ textarea{min-height:55vh;resize:vertical;line-height:1.6}
 .dot.t{border-color:var(--gold);border-width:2px}
 .role{display:block;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
 .num{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;color:var(--gold);width:28px;flex:none}
+.snz{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.snz button{font-size:12px;padding:4px 10px}
+.snz small{color:var(--mute)}
 </style>
 </head>
 <body>
@@ -196,14 +199,15 @@ const ROW_ID='marcello';
 const HDR={apikey:SB_KEY,'Content-Type':'application/json'};
 function status(t,c){const s=$('sync');s.textContent=t;s.className=c||''}
 
-const DEF=()=>({items:[],busy:{},notes:'',rems:[],goals:[],plog:{}});
+const DEF=()=>({items:[],busy:{},notes:'',rems:[],goals:[],plog:{},snz:{}});
+const MAX_SNOOZE=2;
 // Fixed protocol: set by the household, not editable in the page
 const PROTOCOLS=[
   {id:'p_water',text:'Drink minimum 2,500 ml of water',type:'daily',target:1,time:'21:00'},
   {id:'p_schedule',text:'Read your schedule',type:'daily',target:1,time:'17:30'},
   {id:'p_run',text:'Run at least two times',type:'weekly',target:2,time:'18:00'},
   {id:'p_goals',text:'Review your goals in the morning',type:'daily',target:1,time:'10:00'},
-  {id:'p_read',text:'Read for at least 20 minutes',type:'daily',target:1,time:'20:30'},
+  {id:'p_spanish',text:'Learn Spanish at least three times in a week',type:'weekly',target:3,time:'18:30'},
   {id:'p_plan',text:'Plan tomorrow before bed',type:'daily',target:1,time:'21:30'},
   {id:'p_sleep',text:'Sleep at least 7 hours',type:'daily',target:1,time:'21:00'},
   {id:'p_height',text:'Do your height exercise',type:'daily',target:1,time:'19:30'},
@@ -379,7 +383,8 @@ function stamp(date,time){const [y,m,d]=date.split('-').map(Number),[h,mi]=time.
 function at(r){return r.at}
 function clean(){
   S.rems=(S.rems||[]).filter(r=>typeof r.at==='number'&&isFinite(r.at));
-  S.goals=S.goals||[];S.plog=S.plog||{};
+  S.goals=S.goals||[];S.plog=S.plog||{};S.snz=S.snz||{};
+  Object.keys(S.snz).forEach(k=>{if(S.snz[k].until<Date.now()-3*864e5)delete S.snz[k]});
   const c=new Date();c.setDate(c.getDate()-120);const ck=key(c);
   Object.keys(S.plog).forEach(k=>{if(k<ck)delete S.plog[k]});
 }
@@ -442,9 +447,17 @@ function dueAll(){
   });
   PROTOCOLS.forEach(p=>{
     const m=protoDue(p);if(!m)return;
-    out.push({id:'p'+p.id,cat:'adv',role:'Advisor',title:p.text,sub:m,done:()=>toggleDay(p.id,key(new Date()),true)});
+    out.push({id:'p'+p.id+'-'+key(new Date()),cat:'adv',role:'Advisor',title:p.text,sub:m,done:()=>toggleDay(p.id,key(new Date()),true)});
   });
-  return out;
+  const now=Date.now();
+  return out.filter(x=>{const z=S.snz[x.id];return !(z&&z.until>now)})
+            .map(x=>{const z=S.snz[x.id];x.left=MAX_SNOOZE-(z?z.n:0);return x});
+}
+function snooze(id,min){
+  const z=S.snz[id]||{n:0,until:0};
+  if(z.n>=MAX_SNOOZE)return;
+  S.snz[id]={n:z.n+1,until:Date.now()+min*60000};
+  save();check();renderRems();
 }
 function badges(){
   const it=dueAll();
@@ -467,8 +480,12 @@ function check(){
     const list=$('alist');list.innerHTML='';
     d.forEach(r=>{
       const e=document.createElement('div');e.className='al';
-      e.innerHTML='<span><small class="role">'+r.role+'</small><b>'+esc(r.title)+'</b><br><small>'+esc(r.sub)+'</small></span><button class="tick" title="Done">✓</button>';
+      const snz=r.left>0
+        ?'<div class="snz"><button data-m="5">Remind me in 5 min</button><button data-m="10">in 10 min</button><small>'+r.left+' snooze'+(r.left===1?'':'s')+' left</small></div>'
+        :'<div class="snz"><small>No snoozes left, Sir. Please press the tick.</small></div>';
+      e.innerHTML='<span><small class="role">'+r.role+'</small><b>'+esc(r.title)+'</b><br><small>'+esc(r.sub)+'</small>'+snz+'</span><button class="tick" title="Done">✓</button>';
       e.querySelector('.tick').onclick=r.done;
+      e.querySelectorAll('.snz button').forEach(b=>b.onclick=()=>snooze(r.id,+b.dataset.m));
       list.appendChild(e);
     });
   }
